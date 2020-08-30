@@ -1,0 +1,195 @@
+The battleship game we are gonna create will have the same rule 
+as a traditional battleship game, but we can change some rules to
+make the gameplay more fun. We will first code it without the use
+of GUI, then later on, we can decide to remake this game using a 
+GUI.
+
+This game contains two parts. In the first part, we set up the position
+for each ship. In the second part, we try to take out all the enemy ship
+by putting bombs on the grid. The first one to take out all the opponent's
+ships win the game.
+
+--------------------------------------------------------------------
+THE GAME BOARD
+--------------------------------------------------------------------
+
+The grid in battleship will be a 8 x 8 matrix (subjective to change).
+Each square in the grid can be represented using "+", "-", "|". For example, this
+is a 2 by 3 matrix:
+
++---+---+---+
+| 1 | 2 | 3 |
++---+---+---+
+| 4 | 5 | 6 |
++---+---+---+
+
+At the start, every square will be blank " ", meaning that the player or AI didn't put any
+bombs on the grid yet. When the player plant a bomb on a grid, but there's no ship on it, 
+we can use the "*" symbol, we can use the X symbol if the bomb hits a ship. Down below,
+a A_1,1 has no ship when dropping the bomb, but A_2,2 has a ship which is wounded by the bomb.
+
++---+---+---+
+| * |   |   |
++---+---+---+
+|   | X |   |
++---+---+---+
+
+I am not sure how many, and what the size of ships would be in this game yet. It will be decided
+later. The game board of this game will be represented by an argmented matrix, where the left
+matrix is our board, and the right matrix is the AI's board. Ex:
+
+		OUR BOARD							ENEMY BOARD
+
++---+---+---+---+---+---+---+---+---+---+		|	+---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+
+Every time we plant a bomb in enemy's grid and the enemy plant a bomb in our grid, the game board
+will be refreshed. Here's an example of me planting a bomb on A_1,3, and AI putting a bomb on
+A_5,6.
+
+		OUR BOARD							ENEMY BOARD
+
++---+---+---+---+---+---+---+---+---+---+		|	+---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   | * |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   | X |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+
+When all the ship parts is wrecked, the ship will be destroyed and it will be surronded by "*".
+Here's what it looks when a 1 by 2 size ship is destroyed on our board.
+
+		OUR BOARD							ENEMY BOARD
+
++---+---+---+---+---+---+---+---+---+---+		|	+---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   | * |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   | * | * | * | * |   |   |		|       |   |   |   |   |   | * |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   | * | X | X | * |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   | * | * | * | * |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |		|       |   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+		|       +---+---+---+---+---+---+---+---+---+---+
+
+
+
+--------------------------------------------------------------------
+THE PLACEMENT OF SHIPS
+--------------------------------------------------------------------
+
+I haven't decided how many ships there will be and what their sizes are yet. 
+When we place down a ship on the grid, we can't place another ship beside the
+ship we placed. Below is a size 1 by 4 ship represented by "X", other ships can't 
+be placed in the "-" area.
+
++---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+
+|   |   | - | - | - | - | - | - |   |   |
++---+---+---+---+---+---+---+---+---+---+
+|   |   | - | X | X | X | X | - |   |   |
++---+---+---+---+---+---+---+---+---+---+
+|   |   | - | - | - | - | - | - |   |   |
++---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   |   |   |
++---+---+---+---+---+---+---+---+---+---+
+
+--------------------------------------------------------------------
+THE ENEMY AI
+--------------------------------------------------------------------
+
+I was planning to create two difficulties for the AI: NORMAL and DIFFICULT.
+I will put a PDF file for the probability density function used in difficult AI.
+
+The normal game AI imitates the behaviour of a normal human player.
+The difficult AI will calculate the probability of a ship on every single
+squares on the grid, and bomb on the square that's most likely to contain 
+a ship.
+
+AI mode:
+Each AI will have two mode: hunt mode and destroy mode. In the hunt mode, the
+AI will be searching for ships that's not wounded or destroyed yet. 
+Once the AI wound a ship with a bomb, the AI will reach destroy mode.
+In destroy mode, the AI's objective is to destroy the ships instead of searching
+for more ships.
+
+Normal AI:
+In hunt mode, the normal AI will randomly putting bombs on our grid to see if it
+can wound any ships. When it reaches destroy mode, it will put bombs beside the ship
+in order to destroy the entire ship. 
+
+Difficult AI:
+The AI search for the squares with most likely chance of having a ship, then it will
+randomly bomb these areas that are equal most likely of having the ship. When it reach
+destroy mode, it will also apply probability to see where the rest of the ship 
+is most likely hidden in the grid and bomb those areas ramdomly. 
+
+--------------------------------------------------------------------
+THE NUMBER ON THE GRID
+--------------------------------------------------------------------
+
+0:  There is nothing on this square.
+1:  The part of a carrier(C) is on this square.
+2:  The part of a battleship(B) is on this square.
+3:  The part of a cruiser(c) is on this square.
+4:  The part of a submarine(s) is on this square.
+-1: This square is beside a unsunk ship.
+-2: This square is bombed by the enemy, but there's no ship on it.
+-3: This square is bombed by the enemy, and the bomb hits part of the ship, but the ship has sunk yet.
+-4: The square covered with -4 indicates the sunk ship and the squares beside the sunk ship.
